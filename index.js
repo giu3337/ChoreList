@@ -122,6 +122,8 @@ function deleteChore(choreId) {
 
 // Drag-and-drop handlers
 let draggedElement = null;
+let touchStartY = 0;
+let touchCurrentY = 0;
 
 function handleDragStart(e) {
     draggedElement = e.target;
@@ -183,25 +185,19 @@ function handleDragLeave(e) {
 // Touch event handlers
 function handleTouchStart(e) {
     draggedElement = e.target;
+    touchStartY = e.touches[0].clientY;
     e.target.classList.add('dragging');
-    const touch = e.touches[0];
-    draggedElement.setAttribute('data-start-x', touch.clientX);
-    draggedElement.setAttribute('data-start-y', touch.clientY);
 }
 
 function handleTouchMove(e) {
     e.preventDefault();
-    const touch = e.touches[0];
-    const startX = parseInt(draggedElement.getAttribute('data-start-x'), 10);
-    const startY = parseInt(draggedElement.getAttribute('data-start-y'), 10);
-    const diffX = touch.clientX - startX;
-    const diffY = touch.clientY - startY;
-    draggedElement.style.transform = `translate(${diffX}px, ${diffY}px)`;
+    touchCurrentY = e.touches[0].clientY;
+    const diffY = touchCurrentY - touchStartY;
+    draggedElement.style.transform = `translateY(${diffY}px)`;
 }
 
 function handleTouchEnd(e) {
     e.preventDefault();
-    draggedElement.classList.remove('dragging');
     draggedElement.style.transform = '';
 
     const touch = e.changedTouches[0];
@@ -234,4 +230,6 @@ function handleTouchEnd(e) {
 
         renderChores(chores);
     }
+
+    draggedElement.classList.remove('dragging');
 }
