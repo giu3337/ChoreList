@@ -146,6 +146,15 @@ ul li {
     border-radius: 5px;
     text-align: center;
     transition: background-color 0.3s ease, transform 0.3s ease;
+    cursor: move; 
+}
+
+ul li.dragging {
+    opacity: 0.5;
+}
+
+ul li.over {
+    border: 2px solid orange;
 }
 
 ul li:hover {
