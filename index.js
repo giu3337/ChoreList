@@ -33,6 +33,9 @@ function renderChores(chores) {
                 </iframe>
             </div>`;
     } else {
+        // Sort chores by order before rendering
+        chores.sort((a, b) => a.order - b.order);
+
         // Create list items for each chore
         chores.forEach((chore, index) => {
             const liEl = document.createElement('li');
@@ -73,7 +76,11 @@ function renderChores(chores) {
 onValue(choresRef, (snapshot) => {
     if (snapshot.exists()) {
         const data = snapshot.val();
-        const chores = Object.keys(data).map(key => ({ id: key, text: data[key].text }));
+        const chores = Object.keys(data).map(key => ({
+            id: key,
+            text: data[key].text,
+            order: data[key].order || 0 // Default to 0 if order is not set
+        }));
         renderChores(chores);
     } else {
         renderChores([]);
@@ -86,7 +93,11 @@ onValue(choresRef, (snapshot) => {
 addBtn.addEventListener('click', function() {
     const newChore = inputEl.value.trim();
     if (newChore) {
-        push(choresRef, { text: newChore })
+        const newChoreData = {
+            text: newChore,
+            order: Date.now() // Use current timestamp as order value
+        };
+        push(choresRef, newChoreData)
             .then(() => {
                 console.log(`${newChore} added to database`);
                 inputEl.value = ''; // Clear the input field
@@ -145,26 +156,34 @@ function handleDrop(e) {
 
         const chores = Array.from(ulEl.children).map(child => ({
             id: child.getAttribute('data-id'),
-            text: child.textContent.replace('Delete', '').trim(),
+            text: child.textContent,
+            order: parseInt(child.getAttribute('data-index'), 10) // Use data-index as order
         }));
 
         const draggedChore = chores.splice(draggedIndex, 1)[0];
         chores.splice(targetIndex, 0, draggedChore);
+
+        // Update the data-index attributes
+        chores.forEach((chore, index) => {
+            const liEl = ulEl.querySelector(`[data-id='${chore.id}']`);
+            liEl.setAttribute('data-index', index);
+        });
 
         const updates = {};
         chores.forEach((chore, index) => {
             updates[chore.id] = { text: chore.text, order: index };
         });
 
+        console.log('Updating Firebase with: ', updates);
+
         update(choresRef, updates)
             .then(() => {
                 console.log('Chores reordered');
+                renderChores(chores);
             })
             .catch((error) => {
                 console.error('Error reordering chores: ', error);
             });
-
-        renderChores(chores);
     }
     draggedElement.classList.remove('dragging');
     return false;
@@ -209,26 +228,34 @@ function handleTouchEnd(e) {
 
         const chores = Array.from(ulEl.children).map(child => ({
             id: child.getAttribute('data-id'),
-            text: child.textContent.replace('Delete', '').trim(),
+            text: child.textContent,
+            order: parseInt(child.getAttribute('data-index'), 10) // Use data-index as order
         }));
 
         const draggedChore = chores.splice(draggedIndex, 1)[0];
         chores.splice(targetIndex, 0, draggedChore);
+
+        // Update the data-index attributes
+        chores.forEach((chore, index) => {
+            const liEl = ulEl.querySelector(`[data-id='${chore.id}']`);
+            liEl.setAttribute('data-index', index);
+        });
 
         const updates = {};
         chores.forEach((chore, index) => {
             updates[chore.id] = { text: chore.text, order: index };
         });
 
+        console.log('Updating Firebase with: ', updates);
+
         update(choresRef, updates)
             .then(() => {
                 console.log('Chores reordered');
+                renderChores(chores);
             })
             .catch((error) => {
                 console.error('Error reordering chores: ', error);
             });
-
-        renderChores(chores);
     }
 
     draggedElement.classList.remove('dragging');
