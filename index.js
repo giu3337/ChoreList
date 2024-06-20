@@ -40,9 +40,22 @@ function renderChores(chores) {
             liEl.setAttribute('draggable', true);
             liEl.setAttribute('data-id', chore.id);
             liEl.setAttribute('data-index', index);
+
+            // Double-click and double-tap event listeners
+            let lastTap = 0;
             liEl.addEventListener('dblclick', function() {
                 deleteChore(chore.id);
             });
+            liEl.addEventListener('touchend', function(e) {
+                const currentTime = new Date().getTime();
+                const tapLength = currentTime - lastTap;
+                if (tapLength < 300 && tapLength > 0) {
+                    deleteChore(chore.id);
+                }
+                lastTap = currentTime;
+                e.preventDefault();
+            });
+
             liEl.addEventListener('dragstart', handleDragStart);
             liEl.addEventListener('dragover', handleDragOver);
             liEl.addEventListener('drop', handleDrop);

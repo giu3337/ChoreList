@@ -146,7 +146,6 @@ ul li {
     border-radius: 5px;
     text-align: center;
     transition: background-color 0.3s ease, transform 0.3s ease;
-    cursor: move; 
 }
 
 ul li.dragging {
@@ -161,3 +160,4 @@ ul li:hover {
     background-color: #fcd34d;
     transform: scale(1.02);
 }
+
