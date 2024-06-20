@@ -143,7 +143,7 @@ function handleDrop(e) {
 
         const chores = Array.from(ulEl.children).map(child => ({
             id: child.getAttribute('data-id'),
-            text: child.textContent,
+            text: child.textContent.replace('Delete', '').trim(),
         }));
 
         const draggedChore = chores.splice(draggedIndex, 1)[0];
@@ -213,7 +213,7 @@ function handleTouchEnd(e) {
 
         const chores = Array.from(ulEl.children).map(child => ({
             id: child.getAttribute('data-id'),
-            text: child.textContent,
+            text: child.textContent.replace('Delete', '').trim(),
         }));
 
         const draggedChore = chores.splice(draggedIndex, 1)[0];
