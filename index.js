@@ -22,7 +22,6 @@ function renderChores(chores) {
     ulEl.innerHTML = ''; // Clear current list
 
     if (chores.length === 0) {
-        // Show a GIF when there are no chores
         ulEl.innerHTML = `
             <div class="empty-state">
                 <iframe 
@@ -33,10 +32,8 @@ function renderChores(chores) {
                 </iframe>
             </div>`;
     } else {
-        // Sort chores by order before rendering
         chores.sort((a, b) => a.order - b.order);
 
-        // Create list items for each chore
         chores.forEach((chore, index) => {
             const liEl = document.createElement('li');
             liEl.textContent = chore.text;
@@ -44,7 +41,6 @@ function renderChores(chores) {
             liEl.setAttribute('data-id', chore.id);
             liEl.setAttribute('data-index', index);
 
-            // Double-click and double-tap event listeners
             let lastTap = 0;
             liEl.addEventListener('dblclick', function() {
                 deleteChore(chore.id);
@@ -59,14 +55,6 @@ function renderChores(chores) {
                 e.preventDefault();
             });
 
-            liEl.addEventListener('dragstart', handleDragStart);
-            liEl.addEventListener('dragover', handleDragOver);
-            liEl.addEventListener('drop', handleDrop);
-            liEl.addEventListener('dragenter', handleDragEnter);
-            liEl.addEventListener('dragleave', handleDragLeave);
-            liEl.addEventListener('touchstart', handleTouchStart);
-            liEl.addEventListener('touchmove', handleTouchMove);
-            liEl.addEventListener('touchend', handleTouchEnd);
             ulEl.appendChild(liEl);
         });
     }
@@ -79,7 +67,7 @@ onValue(choresRef, (snapshot) => {
         const chores = Object.keys(data).map(key => ({
             id: key,
             text: data[key].text,
-            order: data[key].order || 0 // Default to 0 if order is not set
+            order: data[key].order || 0
         }));
         renderChores(chores);
     } else {
@@ -95,12 +83,12 @@ addBtn.addEventListener('click', function() {
     if (newChore) {
         const newChoreData = {
             text: newChore,
-            order: Date.now() // Use current timestamp as order value
+            order: Date.now()
         };
         push(choresRef, newChoreData)
             .then(() => {
                 console.log(`${newChore} added to database`);
-                inputEl.value = ''; // Clear the input field
+                inputEl.value = '';
             })
             .catch((error) => {
                 console.error("Error adding chore: ", error);
@@ -133,8 +121,6 @@ function deleteChore(choreId) {
 
 // Drag-and-drop handlers
 let draggedElement = null;
-let touchStartY = 0;
-let touchCurrentY = 0;
 
 function handleDragStart(e) {
     draggedElement = e.target;
@@ -157,13 +143,12 @@ function handleDrop(e) {
         const chores = Array.from(ulEl.children).map(child => ({
             id: child.getAttribute('data-id'),
             text: child.textContent,
-            order: parseInt(child.getAttribute('data-index'), 10) // Use data-index as order
+            order: parseInt(child.getAttribute('data-index'), 10)
         }));
 
         const draggedChore = chores.splice(draggedIndex, 1)[0];
         chores.splice(targetIndex, 0, draggedChore);
 
-        // Update the data-index attributes
         chores.forEach((chore, index) => {
             const liEl = ulEl.querySelector(`[data-id='${chore.id}']`);
             liEl.setAttribute('data-index', index);
@@ -173,8 +158,6 @@ function handleDrop(e) {
         chores.forEach((chore, index) => {
             updates[chore.id] = { text: chore.text, order: index };
         });
-
-        console.log('Updating Firebase with: ', updates);
 
         update(choresRef, updates)
             .then(() => {
@@ -202,6 +185,9 @@ function handleDragLeave(e) {
 }
 
 // Touch event handlers
+let touchStartY = 0;
+let touchCurrentY = 0;
+
 function handleTouchStart(e) {
     draggedElement = e.target;
     touchStartY = e.touches[0].clientY;
@@ -221,7 +207,7 @@ function handleTouchEnd(e) {
 
     const touch = e.changedTouches[0];
     const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
-    
+
     if (targetElement && targetElement.tagName === 'LI' && targetElement !== draggedElement) {
         const draggedIndex = parseInt(draggedElement.getAttribute('data-index'), 10);
         const targetIndex = parseInt(targetElement.getAttribute('data-index'), 10);
@@ -229,13 +215,12 @@ function handleTouchEnd(e) {
         const chores = Array.from(ulEl.children).map(child => ({
             id: child.getAttribute('data-id'),
             text: child.textContent,
-            order: parseInt(child.getAttribute('data-index'), 10) // Use data-index as order
+            order: parseInt(child.getAttribute('data-index'), 10)
         }));
 
         const draggedChore = chores.splice(draggedIndex, 1)[0];
         chores.splice(targetIndex, 0, draggedChore);
 
-        // Update the data-index attributes
         chores.forEach((chore, index) => {
             const liEl = ulEl.querySelector(`[data-id='${chore.id}']`);
             liEl.setAttribute('data-index', index);
@@ -245,8 +230,6 @@ function handleTouchEnd(e) {
         chores.forEach((chore, index) => {
             updates[chore.id] = { text: chore.text, order: index };
         });
-
-        console.log('Updating Firebase with: ', updates);
 
         update(choresRef, updates)
             .then(() => {
@@ -259,4 +242,21 @@ function handleTouchEnd(e) {
     }
 
     draggedElement.classList.remove('dragging');
+}
+
+// Device type detection
+const isMobileDevice = /Mobi|Android/i.test(navigator.userAgent);
+
+if (isMobileDevice) {
+    // Apply touch event listeners for mobile devices
+    ulEl.addEventListener('touchstart', handleTouchStart);
+    ulEl.addEventListener('touchmove', handleTouchMove);
+    ulEl.addEventListener('touchend', handleTouchEnd);
+} else {
+    // Apply drag-and-drop event listeners for desktop devices
+    ulEl.addEventListener('dragstart', handleDragStart);
+    ulEl.addEventListener('dragover', handleDragOver);
+    ulEl.addEventListener('drop', handleDrop);
+    ulEl.addEventListener('dragenter', handleDragEnter);
+    ulEl.addEventListener('dragleave', handleDragLeave);
 }
