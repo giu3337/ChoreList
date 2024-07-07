@@ -37,7 +37,7 @@ function renderChores(chores) {
         chores.forEach((chore, index) => {
             const liEl = document.createElement('li');
             liEl.textContent = chore.text;
-            liEl.setAttribute('draggable', true);
+            liEl.setAttribute('draggable', !isMobileDevice);
             liEl.setAttribute('data-id', chore.id);
             liEl.setAttribute('data-index', index);
 
@@ -54,6 +54,14 @@ function renderChores(chores) {
                 lastTap = currentTime;
                 e.preventDefault();
             });
+
+            if (!isMobileDevice) {
+                liEl.addEventListener('dragstart', handleDragStart);
+                liEl.addEventListener('dragover', handleDragOver);
+                liEl.addEventListener('drop', handleDrop);
+                liEl.addEventListener('dragenter', handleDragEnter);
+                liEl.addEventListener('dragleave', handleDragLeave);
+            }
 
             ulEl.appendChild(liEl);
         });
@@ -184,74 +192,13 @@ function handleDragLeave(e) {
     }
 }
 
-// Touch event handlers
-let touchStartY = 0;
-let touchCurrentY = 0;
-
-function handleTouchStart(e) {
-    draggedElement = e.target;
-    touchStartY = e.touches[0].clientY;
-    e.target.classList.add('dragging');
-}
-
-function handleTouchMove(e) {
-    e.preventDefault();
-    touchCurrentY = e.touches[0].clientY;
-    const diffY = touchCurrentY - touchStartY;
-    draggedElement.style.transform = `translateY(${diffY}px)`;
-}
-
-function handleTouchEnd(e) {
-    e.preventDefault();
-    draggedElement.style.transform = '';
-
-    const touch = e.changedTouches[0];
-    const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
-
-    if (targetElement && targetElement.tagName === 'LI' && targetElement !== draggedElement) {
-        const draggedIndex = parseInt(draggedElement.getAttribute('data-index'), 10);
-        const targetIndex = parseInt(targetElement.getAttribute('data-index'), 10);
-
-        const chores = Array.from(ulEl.children).map(child => ({
-            id: child.getAttribute('data-id'),
-            text: child.textContent,
-            order: parseInt(child.getAttribute('data-index'), 10)
-        }));
-
-        const draggedChore = chores.splice(draggedIndex, 1)[0];
-        chores.splice(targetIndex, 0, draggedChore);
-
-        chores.forEach((chore, index) => {
-            const liEl = ulEl.querySelector(`[data-id='${chore.id}']`);
-            liEl.setAttribute('data-index', index);
-        });
-
-        const updates = {};
-        chores.forEach((chore, index) => {
-            updates[chore.id] = { text: chore.text, order: index };
-        });
-
-        update(choresRef, updates)
-            .then(() => {
-                console.log('Chores reordered');
-                renderChores(chores);
-            })
-            .catch((error) => {
-                console.error('Error reordering chores: ', error);
-            });
-    }
-
-    draggedElement.classList.remove('dragging');
-}
-
 // Device type detection
 const isMobileDevice = /Mobi|Android/i.test(navigator.userAgent);
 
 if (isMobileDevice) {
-    // Apply touch event listeners for mobile devices
-    ulEl.addEventListener('touchstart', handleTouchStart);
-    ulEl.addEventListener('touchmove', handleTouchMove);
-    ulEl.addEventListener('touchend', handleTouchEnd);
+    // Disable dragging and ensure scrolling
+    ulEl.style.overflowY = 'scroll';
+    ulEl.style.touchAction = 'pan-y';
 } else {
     // Apply drag-and-drop event listeners for desktop devices
     ulEl.addEventListener('dragstart', handleDragStart);
