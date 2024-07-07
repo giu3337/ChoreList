@@ -133,7 +133,9 @@ let draggedElement = null;
 function handleDragStart(e) {
     draggedElement = e.target;
     e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', e.target.dataset.id);
     e.target.classList.add('dragging');
+    console.log('Drag Start:', draggedElement);
 }
 
 function handleDragOver(e) {
@@ -143,8 +145,11 @@ function handleDragOver(e) {
 }
 
 function handleDrop(e) {
+    e.preventDefault();
     e.stopPropagation();
-    if (draggedElement !== e.target) {
+    console.log('Drop Event:', e.target);
+
+    if (draggedElement !== e.target && e.target.tagName === 'LI') {
         const draggedIndex = parseInt(draggedElement.getAttribute('data-index'), 10);
         const targetIndex = parseInt(e.target.getAttribute('data-index'), 10);
 
@@ -161,10 +166,8 @@ function handleDrop(e) {
         chores.forEach((chore, index) => {
             const liEl = ulEl.querySelector(`[data-id='${chore.id}']`);
             liEl.setAttribute('data-index', index);
+            liEl.textContent = `${chore.text}`;
         });
-
-        // Render the chores immediately
-        renderChores(chores);
 
         // Update Firebase with the new order
         const updates = {};
@@ -175,6 +178,20 @@ function handleDrop(e) {
         update(choresRef, updates)
             .then(() => {
                 console.log('Chores reordered');
+                // Manually trigger the onValue event listener to refresh the UI
+                onValue(choresRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        const updatedChores = Object.keys(data).map(key => ({
+                            id: key,
+                            text: data[key].text,
+                            order: data[key].order || 0
+                        }));
+                        renderChores(updatedChores);
+                    } else {
+                        renderChores([]);
+                    }
+                });
             })
             .catch((error) => {
                 console.error('Error reordering chores: ', error);
@@ -187,12 +204,14 @@ function handleDrop(e) {
 function handleDragEnter(e) {
     if (e.target.tagName === 'LI' && e.target !== draggedElement) {
         e.target.classList.add('over');
+        console.log('Drag Enter:', e.target);
     }
 }
 
 function handleDragLeave(e) {
     if (e.target.tagName === 'LI') {
         e.target.classList.remove('over');
+        console.log('Drag Leave:', e.target);
     }
 }
 
