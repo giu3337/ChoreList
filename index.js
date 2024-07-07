@@ -157,11 +157,16 @@ function handleDrop(e) {
         const draggedChore = chores.splice(draggedIndex, 1)[0];
         chores.splice(targetIndex, 0, draggedChore);
 
+        // Update the data-index attributes immediately
         chores.forEach((chore, index) => {
             const liEl = ulEl.querySelector(`[data-id='${chore.id}']`);
             liEl.setAttribute('data-index', index);
         });
 
+        // Render the chores immediately
+        renderChores(chores);
+
+        // Update Firebase with the new order
         const updates = {};
         chores.forEach((chore, index) => {
             updates[chore.id] = { text: chore.text, order: index };
@@ -170,7 +175,6 @@ function handleDrop(e) {
         update(choresRef, updates)
             .then(() => {
                 console.log('Chores reordered');
-                renderChores(chores);
             })
             .catch((error) => {
                 console.error('Error reordering chores: ', error);
